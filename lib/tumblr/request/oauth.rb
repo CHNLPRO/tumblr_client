@@ -3,13 +3,14 @@ require 'time'
 require 'uri'
 require 'openssl'
 require 'base64'
+require 'cgi'
 
 module Tumblr
   module Request
     class TumblrOAuth < Faraday::Middleware
       def call(env)
         if env[:method].to_s == "get"
-            params = env[:url].query_values || {}
+            params = CGI.parse(env[:url].query)
             url = "#{env[:url].scheme}://#{env[:url].host}#{env[:url].path}"
         else
             params = env[:body] || {}
@@ -19,11 +20,9 @@ module Tumblr
         params.each do |key, value|
           signature_params = {} if value.respond_to?(:content_type)
         end
-        env[:request_headers]["Authorization"] = self.oauth_gen(env[:method], url, signature_params) 
+        env[:request_headers]["Authorization"] = oauth_gen(env[:method].to_s, url, signature_params) 
         env[:request_headers]["Content-type"] = "application/x-www-form-urlencoded"                                                                              
         env[:request_headers]["Host"] = "api.tumblr.com"
-        
-
         @app.call(env)
       end
 
@@ -38,12 +37,12 @@ module Tumblr
          params[:oauth_timestamp] = Time.now.to_i
          params[:oauth_token] = @options[:token]
          params[:oauth_version] = "1.0"
-         params[:oauth_signature] = self.oauth_sig(method, url, params)
+         params[:oauth_signature] = oauth_sig(method, url, params)
          
          header = []
          params.each do |key, value|
             if key.to_s.include?("oauth")
-              header << "#{key.to_s}=#{value}"
+              header << %Q(#{key}=#{value})
             end
          end
 
@@ -59,13 +58,13 @@ module Tumblr
         
         encoded = []
         params.each do |key, value|
-            encoded << "#{key.to_s}=#{URI.encode(value.to_s, /[^a-z0-9\-\.\_\~]/i)}"
+            encoded << "#{key}=#{URI.encode(value[0].to_s, /[^a-z0-9\-\.\_\~]/i)}"
         end
 
         parts << URI.encode(encoded.join("&"), /[^a-z0-9\-\.\_\~]/i)
         signature_base = parts.join("&")
         secret = "#{@options[:consumer_secret]}&#{@options[:token_secret]}"
-        Base64.encode64(OpenSSL::HMAC.digest(OpenSSL::Digest::SHA1.new, secret, signature_base)).chomp.gsub(/\n/, '')
+        Base64.encode64(OpenSSL::HMAC.digest(OpenSSL::Digest::SHA1.new, secret, signature_base)).gsub(/\n/, '')
       end
     end
   end

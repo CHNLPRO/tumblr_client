@@ -6,7 +6,7 @@ module Tumblr
     #Performs a get request
     def get(path, params={})
       response = connection.get do |req|
-        req.url path 
+        req.url path
         req.params = params
       end
       #check for errors and encapsulate
