@@ -1,7 +1,7 @@
 # encoding: utf-8
 
 Gem::Specification.new do |gem|
-    gem.add_dependency 'faraday', '~> 0.7'
+    # works with faraday versions specified in faraday_middleware's gemspec
     gem.add_dependency 'faraday_middleware'
     gem.add_dependency 'json'
     gem.add_development_dependency 'rake'
