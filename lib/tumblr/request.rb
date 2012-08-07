@@ -3,24 +3,25 @@ require 'json'
 module Tumblr
   module Request
 
-    #Performs a get request
+    #
+    # All Tumblr::Request methods have the same return signature (below)
+    # @returns Hash: {"response" => repsonse, "meta" => {"status" => xxx, "msg" => msg}}
+    #
+
     def get(path, params={})
       response = connection.get do |req|
         req.url path
         req.params = params
       end
-      #check for errors and encapsulate
-      response.body['response']
+      response.body
     end
     
-    #Performs post request
     def post(path, params={})
       response = connection.post do |req|
         req.url path
         req.body = params unless params.empty?
       end
-      #Check for errors and encapsulate
-      response.body['response']
+      response.body
     end
   end
 end
